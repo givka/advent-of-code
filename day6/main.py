@@ -20,6 +20,20 @@ class Planet:
             parent = parent.parent
         return number
 
+    def check_if_parent_has_name(self, name, last_name="", step=0, results=[]):
+        step += 1
+
+        look_for = self.children.copy()
+        look_for.append(self.parent)
+        look_for = [look for look in look_for if look and look.name != last_name]
+
+        for look in look_for:
+            if look.name == name:
+                results.append(step - 2)  # remove origin and destination
+            look.check_if_parent_has_name(name, self.name, step, results)
+
+        return results
+
 
 def fill_planet_dict(planets):
     planets_dict = {}
@@ -43,6 +57,8 @@ def main():
 
     number_of_orbits = [planets_dict[key].number_of_orbits() for key in planets_dict]
     print("number of orbits:", sum(number_of_orbits))
+    number_of_connections = planets_dict['YOU'].check_if_parent_has_name('SAN')
+    print("number of connections:", min(number_of_connections))
 
 
 if __name__ == "__main__":
