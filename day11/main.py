@@ -48,6 +48,22 @@ class Robot:
 
         return self.map[self.position.key()] if self.position.key() in self.map else 0
 
+    def get_string_map(self):
+        min_w = min(self.map, key=lambda t: t[0])[0]
+        min_h = min(self.map, key=lambda t: t[1])[1]
+        max_w = max(self.map, key=lambda t: t[0])[0]
+        max_h = max(self.map, key=lambda t: t[1])[1]
+
+        string_map = ""
+        for h in sorted(range(min_h, max_h + 1), reverse=True):  # y from top to bottom
+            for w in range(min_w, max_w + 1):
+                if (w, h) in self.map:
+                    string_map += ". " if self.map[(w, h)] == 0 else "0 "
+                else:
+                    string_map += ". "
+            string_map += "\n"
+        return string_map
+
 
 class IntCode:
     def __init__(self, numbers: list, input_number: int):
@@ -117,6 +133,10 @@ def main():
     the_brain = parse()
     int_code = IntCode(the_brain, 0)  # start over black panel
     print("number of painted layers once:", int_code.robot.count)
+
+    the_brain = parse()
+    int_code = IntCode(the_brain, 1)  # start over white panel
+    print(int_code.robot.get_string_map())
 
 
 if __name__ == "__main__":
