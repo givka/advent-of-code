@@ -104,8 +104,9 @@ class Droid:
         self.dir = vec2(0, 1)
         self.remaining = {Movement.NORTH, Movement.SOUTH, Movement.WEST, Movement.EAST}
         self.oxygen_pos = vec2(0, 0)
+        self.oxygen_to_fill = set()
 
-    def print_map(self):
+    def print_map(self) -> None:
         string = ""
         min_w = min(self.map, key=lambda t: t.x).x
         min_h = min(self.map, key=lambda t: t.y).y
@@ -137,7 +138,7 @@ class Droid:
             string += "\n"
         print(string)
 
-    def get_dir_input(self):
+    def get_dir_input(self) -> int:
         if self.dir == Movement.NORTH:
             return 1
         if self.dir == Movement.SOUTH:
@@ -147,7 +148,10 @@ class Droid:
         if self.dir == Movement.EAST:
             return 4
 
-    def process_input(self):
+    def process_input(self) -> int:
+        # self.print_map()
+        # input()
+
         if (self.pos + Movement.NORTH) not in self.map:
             self.remaining.add(self.pos + Movement.NORTH)
         if (self.pos + Movement.SOUTH) not in self.map:
@@ -169,11 +173,12 @@ class Droid:
             self.dir = self.get_dir_left()
             return self.get_dir_input()
 
-    def process_output(self, output):
+    def process_output(self, output) -> None:
         new_pos = self.pos + self.dir
 
         if output == Tile.OXYGEN:
             self.oxygen_pos = new_pos
+            self.oxygen_to_fill.add(self.oxygen_pos)
 
         self.map[new_pos] = output
         if new_pos in self.remaining:
@@ -186,7 +191,7 @@ class Droid:
         elif output == Tile.OXYGEN:
             self.pos += self.dir
 
-    def get_dir_left(self):
+    def get_dir_left(self) -> vec2:
         if self.dir == Movement.NORTH:
             return Movement.WEST
         elif self.dir == Movement.SOUTH:
@@ -196,13 +201,36 @@ class Droid:
         elif self.dir == Movement.EAST:
             return Movement.NORTH
 
-    def map_fully_discovered(self):
+    def map_fully_discovered(self) -> bool:
         return len(self.remaining) == 0
+
+    def map_has_empty_tiles(self) -> bool:
+        empty_tiles = [key for key in self.map if self.map[key] == Tile.EMPTY]
+        return len(empty_tiles) != 0
+
+    def fill_oxygen(self) -> None:
+        for ox in list(self.oxygen_to_fill):
+            neighbours = [ox + Movement.NORTH, ox + Movement.SOUTH,
+                          ox + Movement.WEST, ox + Movement.EAST]
+            for neighbour in neighbours:
+                if self.map[neighbour] == 1:
+                    self.map[neighbour] = 2
+                    self.oxygen_to_fill.add(neighbour)
+            self.oxygen_to_fill.remove(ox)
+
+    def get_minutes_to_fill_oxygen(self) -> int:
+        count = 0
+        while self.map_has_empty_tiles():
+            count += 1
+            self.fill_oxygen()
+            # self.print_map()
+            # input()
+        return count
 
 
 @dataclass
 class Cell:
-    parent: 'Cell'
+    parent: 'Cell' or None
     pos: vec2
 
     def count(self, acc=0):
@@ -211,7 +239,7 @@ class Cell:
         return self.parent.count(acc + 1)
 
 
-def breath_first_search(maze: dict, goal: vec2):
+def breath_first_search(maze: dict, goal: vec2) -> Cell:
     discovered = {}
     start = Cell(None, vec2(0, 0))
     queue = deque([start])
@@ -220,12 +248,13 @@ def breath_first_search(maze: dict, goal: vec2):
     while len(queue) != 0:
         current = queue.popleft()
         if current.pos == goal:
-            return current
-        for neighbor in [current.pos + Movement.NORTH, current.pos + Movement.SOUTH,
-                         current.pos + Movement.WEST, current.pos + Movement.EAST]:
-            if neighbor not in maze or maze[neighbor] == Tile.WALL or neighbor in discovered:
+            return current.count()
+        neighbours = [current.pos + Movement.NORTH, current.pos + Movement.SOUTH,
+                      current.pos + Movement.WEST, current.pos + Movement.EAST]
+        for neighbour in neighbours:
+            if neighbour not in maze or maze[neighbour] == Tile.WALL or neighbour in discovered:
                 continue
-            cell = Cell(current, neighbor)
+            cell = Cell(current, neighbour)
             discovered[cell.pos] = cell
             queue.append(cell)
 
@@ -238,11 +267,9 @@ def main():
     while droid.map_fully_discovered() is False:
         int_code.process_code(droid.process_input, droid.process_output)
 
-    droid.print_map()
-    print("oxygen position:", droid.oxygen_pos)
+    print("minimum inputs:", breath_first_search(droid.map, droid.oxygen_pos))
 
-    cell = breath_first_search(droid.map, droid.oxygen_pos)
-    print("minimum inputs:", cell.count())
+    print("minutes to fill oxygen:", droid.get_minutes_to_fill_oxygen())
 
 
 if __name__ == "__main__":
