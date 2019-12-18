@@ -1,4 +1,5 @@
 import csv
+from collections import deque
 from dataclasses import dataclass
 
 
@@ -199,6 +200,41 @@ class Droid:
         return len(self.remaining) == 0
 
 
+@dataclass
+class Cell:
+    parent: 'Cell'
+    pos: vec2
+
+    def __hash__(self):
+        return hash((self.pos.x, self.pos.y))
+
+    def __eq__(self, other):
+        return self.pos.x == other.pos.x and self.pos.y == other.pos.y
+
+
+def breath_first_search(maze: dict, goal: vec2):
+    discovered = {}
+    start = Cell(None, vec2(0, 0))
+    queue = deque([start])
+    discovered[start.pos] = start
+
+    good_paths = []
+    while len(queue) != 0:
+        v = queue.popleft()
+        if v.pos == goal:
+            return v
+        for pos in [v.pos + Movement.NORTH, v.pos + Movement.SOUTH, v.pos + Movement.WEST, v.pos + Movement.EAST]:
+            if pos not in maze:
+                continue
+            if maze[pos] == Tile.WALL:
+                continue
+            if pos in discovered:
+                continue
+            cell = Cell(v, pos)
+            discovered[cell.pos] = cell
+            queue.append(cell)
+
+
 def main():
     memory = parse()
     int_code = IntCode(memory)
@@ -209,6 +245,16 @@ def main():
 
     droid.print_map()
     print("oxygen position:", droid.oxygen_pos)
+
+    cell = breath_first_search(droid.map, droid.oxygen_pos)
+
+    count = 0
+    parent = cell.parent
+    while parent is not None:
+        count+=1
+        print(parent.pos)
+        parent = cell.parent
+    print(count)
 
 
 if __name__ == "__main__":
