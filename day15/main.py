@@ -205,12 +205,6 @@ class Cell:
     parent: 'Cell'
     pos: vec2
 
-    def __hash__(self):
-        return hash((self.pos.x, self.pos.y))
-
-    def __eq__(self, other):
-        return self.pos.x == other.pos.x and self.pos.y == other.pos.y
-
     def count(self, acc=0):
         if self.parent is None:
             return acc
