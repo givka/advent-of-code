@@ -213,8 +213,8 @@ class Droid:
             neighbours = [ox + Movement.NORTH, ox + Movement.SOUTH,
                           ox + Movement.WEST, ox + Movement.EAST]
             for neighbour in neighbours:
-                if self.map[neighbour] == 1:
-                    self.map[neighbour] = 2
+                if self.map[neighbour] == Tile.EMPTY:
+                    self.map[neighbour] = Tile.OXYGEN
                     self.oxygen_to_fill.add(neighbour)
             self.oxygen_to_fill.remove(ox)
 
