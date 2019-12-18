@@ -211,6 +211,11 @@ class Cell:
     def __eq__(self, other):
         return self.pos.x == other.pos.x and self.pos.y == other.pos.y
 
+    def count(self, acc=0):
+        if self.parent is None:
+            return acc
+        return self.parent.count(acc + 1)
+
 
 def breath_first_search(maze: dict, goal: vec2):
     discovered = {}
@@ -218,19 +223,15 @@ def breath_first_search(maze: dict, goal: vec2):
     queue = deque([start])
     discovered[start.pos] = start
 
-    good_paths = []
     while len(queue) != 0:
-        v = queue.popleft()
-        if v.pos == goal:
-            return v
-        for pos in [v.pos + Movement.NORTH, v.pos + Movement.SOUTH, v.pos + Movement.WEST, v.pos + Movement.EAST]:
-            if pos not in maze:
+        current = queue.popleft()
+        if current.pos == goal:
+            return current
+        for neighbor in [current.pos + Movement.NORTH, current.pos + Movement.SOUTH,
+                         current.pos + Movement.WEST, current.pos + Movement.EAST]:
+            if neighbor not in maze or maze[neighbor] == Tile.WALL or neighbor in discovered:
                 continue
-            if maze[pos] == Tile.WALL:
-                continue
-            if pos in discovered:
-                continue
-            cell = Cell(v, pos)
+            cell = Cell(current, neighbor)
             discovered[cell.pos] = cell
             queue.append(cell)
 
@@ -247,14 +248,7 @@ def main():
     print("oxygen position:", droid.oxygen_pos)
 
     cell = breath_first_search(droid.map, droid.oxygen_pos)
-
-    count = 0
-    parent = cell.parent
-    while parent is not None:
-        count+=1
-        print(parent.pos)
-        parent = cell.parent
-    print(count)
+    print("minimum inputs:", cell.count())
 
 
 if __name__ == "__main__":
