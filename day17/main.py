@@ -100,12 +100,15 @@ class Robot:
         self.pos = vec2(0, 0)
         self.intersections = []
         self.dir = vec2(0, 0)
-
-    def test(self, m):
-        for i in m:
-            self.output_callback(i)
+        self.input_ascii = ""
+        self.cursor_input_ascii = 0
+        self.score = 0
 
     def output_callback(self, output):
+        if output not in self.ascii:
+            self.score = output
+            return
+
         char = self.ascii[output]
 
         if char == "^" or char == "v" or char == "<" or char == ">":
@@ -127,9 +130,16 @@ class Robot:
             self.cursor.x += 1
 
     def input_callback(self):
-        print("input:", 0)
-        input()
-        return 0
+        if self.cursor_input_ascii > len(self.input_ascii) - 1:
+            if self.cursor_input_ascii == len(self.input_ascii):
+                self.cursor_input_ascii += 1
+                return ord("n")
+            if self.cursor_input_ascii == len(self.input_ascii) + 1:
+                self.cursor_input_ascii += 1
+                return ord("\n")
+
+        self.cursor_input_ascii += 1
+        return ord(self.input_ascii[self.cursor_input_ascii - 1])
 
     def print_map(self):
         min_w = min(self.map, key=lambda t: t.x).x
@@ -167,7 +177,7 @@ class Robot:
         alignment_parameters = [abs(i.x * i.y) for i in self.intersections]
         return sum(alignment_parameters)
 
-    def get_command_pattern(self):
+    def create_input_ascii(self):
         neighbours = [Movement.NORTH, Movement.SOUTH, Movement.WEST, Movement.EAST]
 
         commands = []
@@ -175,10 +185,11 @@ class Robot:
         turn = ""
 
         for n in neighbours:
-            if self.map[self.pos + n] == "#":
+            if self.pos + n in self.map and self.map[self.pos + n] == "#":
                 command = vec2(0, 0)
                 turn = self.new_turn(n)
                 self.dir = n
+                break
 
         while len([key for key in self.map if self.map[key] == "#"]) != 0:
             command += self.dir
@@ -200,21 +211,37 @@ class Robot:
                     break
 
         commands.append((turn, abs(command.x + command.y)))  # last command
-
         unique_commands = list(set(commands))
 
         string = ''
         for command in commands:
             string += str(unique_commands.index(command))
 
-        patterns = ['' for _ in range(0, 3)]  # give patterns of given length
-        assert find_pattern(string, patterns)
+        patterns = set()  # give patterns of given length
+        find_pattern(string, patterns)
+        # there are multiple combinations of patterns, we take the first one
+        patterns = sorted([list(p) for p in patterns][0], reverse=True)  # sort the list because of the string replace
 
-        command_pattern = []
+        functions = {}
+        char_int = ord('A')
+        main_routine = format_message(commands)
         for pattern in patterns:
-            command_pattern.append([unique_commands[int(char)] for char in pattern])
+            look_for_commands = [unique_commands[int(char)] for char in pattern]
+            look_string = format_message(look_for_commands)
+            functions[chr(char_int)] = look_string
+            main_routine = re.sub(look_string, chr(char_int), main_routine)
+            char_int += 1
+        functions["main"] = main_routine
 
-        return command_pattern
+        # hardcoded, could be done in generic way
+        input_message = ""
+        input_message += functions["main"] + "\n"
+        input_message += functions["A"] + "\n"
+        input_message += functions["B"] + "\n"
+        input_message += functions["C"] + "\n"
+
+        self.input_ascii = input_message
+        self.cursor_input_ascii = 0
 
     def new_turn(self, new_pos):
         if self.dir == Movement.NORTH:
@@ -227,36 +254,52 @@ class Robot:
             return "R" if new_pos == Movement.NORTH else "L"
 
 
-def find_pattern(string: str, patterns: list, level=1):
-    for i in range(1, len(string)):
+def format_message(commands):
+    string = ""
+    for c in commands:
+        string += c[0] + "," + str(c[1]) + ","
+    return string[:-1]
+
+
+def find_pattern(string: str, patterns: set, memory=None, level=1):
+    if memory is None:
+        memory = ['' for _ in range(0, 3)]
+
+    for i in range(2, len(string)):  # begin at 2 to get group of 2 minimum
         look_for = string[0:i]
-        patterns[level - 1] = look_for
+        memory[level - 1] = look_for
         z = re.finditer(look_for, string)
         matches = [zz.start() for zz in z]
-        if level != len(patterns) and len(matches) == 1:  # we want groups of 2 minimum
+        if level != len(memory) and len(matches) == 1:  # we want groups of 2 minimum
             break
         string_to_empty = re.sub(look_for, '', string)
-        if level == len(patterns) and len(string_to_empty) == 0:
-            return True
-        if level < len(patterns):
-            if find_pattern(string_to_empty, patterns, level + 1):
-                return True
-    return False
+        if level == len(memory) and len(look_for) > 1 and len(string_to_empty) == 0:
+            patterns.add((memory[0], memory[1], memory[2]))
+        if level < len(memory):
+            find_pattern(string_to_empty, patterns, memory, level + 1)
 
 
 def main():
     memory = parse()
     robot = Robot()
+    memory[0] = 1  # first we get the map
     int_code = IntCode(memory)
 
     while int_code.is_finished() is False:
         int_code.process_code(robot.input_callback, robot.output_callback)
 
     robot.get_intersections()
-    # robot.print_map()
+    robot.print_map()
     print("sum alignment parameters:", robot.get_sum_alignment_parameters())
-    command_pattern = robot.get_command_pattern()
-    print(command_pattern)
+
+    memory[0] = 2  # then we move the robot
+    int_code = IntCode(memory)
+    robot.create_input_ascii()
+
+    while int_code.is_finished() is False:
+        int_code.process_code(robot.input_callback, robot.output_callback)
+
+    print("score:", robot.score)
 
 
 if __name__ == "__main__":
