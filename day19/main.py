@@ -62,52 +62,65 @@ def parse():
 
 class Droid:
     def __init__(self, size: (int, int)):
-        self.pos = (0, 0)
         self.map = {}
-        self.grid = [(x, y) for x in range(0, size[0]) for y in range(0, size[1])]
-        self.cursor = 0
+        for y in range(0, size[1]):
+            for x in range(0, size[0]):
+                self.map[(x, y)] = " "
+
+        self.cursor = (0, 0)
         self.is_x = True
         self.size = size
-        print(self.grid)
 
     def input_callback(self):
-        input_value = self.grid[self.cursor][0 if self.is_x else 1]
+        input_value = self.cursor[0 if self.is_x else 1]
         self.is_x = not self.is_x
         return input_value
 
-    def is_running(self):
-        return self.cursor < len(self.grid)
-
     def output_callback(self, output):
-        print(self.grid[self.cursor], output)
-
-        self.map[self.grid[self.cursor]] = "#" if output == 1 else "."
-        self.cursor += 1
+        self.map[self.cursor] = "#" if output == 1 else "."
 
     def __str__(self):
         string = ""
         for y in range(0, self.size[1]):
             for x in range(0, self.size[0]):
-                string += self.map[(x, y)]
+                string += self.map[(x, y)] if (x, y) in self.map else " "
             string += "\n"
         return string
 
     def get_points_affected(self):
         return len([key for key in self.map if self.map[key] == "#"])
 
+    def has_hit(self, memory: list, pos: (int, int)) -> bool:
+        print(pos)
+        self.cursor = pos
+        self.is_x = True
+        int_code = IntCode(memory)
+        while int_code.is_running():
+            int_code.process_code(self.input_callback, self.output_callback)
+        return self.map[pos] == "#"
+
 
 def main():
     memory = parse()
-    # print(memory)
 
-    droid = Droid((50, 50))
-    while droid.is_running():
-        int_code = IntCode(memory)
-        while int_code.is_running():
-            int_code.process_code(droid.input_callback, droid.output_callback)
+    size = (50, 50)
+    droid = Droid(size)
+
+    y = 0
+    last_hit_x = 0
+    while y < size[1]:
+        x = last_hit_x
+        while x < size[0]:
+            if droid.has_hit(memory, (x, y)):
+                last_hit_x = x
+                x += 1
+                while droid.has_hit(memory, (x, y)):
+                    x += 1
+                break
+            x += 1
+        y += 1
 
     print(droid)
-    print("done")
     print("points affected:", droid.get_points_affected())
 
 
