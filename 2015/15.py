@@ -1,3 +1,4 @@
+from functools import reduce
 I = []
 
 for l in open("15.in").readlines():
@@ -29,26 +30,15 @@ for i in range(100+1):
 
 R = []
 for i in out:
-    c = 0
-    d = 0
-    f = 0
-    t = 0
-    cal = 0
-    for a in zip(i, I):
-        c += a[0]*a[1][0]
-        d += a[0]*a[1][1]
-        f += a[0]*a[1][2]
-        t += a[0]*a[1][3]
-        cal += a[0]*a[1][4]
-    if c < 0:
-        c = 0
-    if d < 0:
-        d = 0
-    if f < 0:
-        f = 0
-    if t < 0:
-        t = 0
-    R.append([c*d*f*t, cal])
+    ing = [0, 0, 0, 0, 0]
+    for a, b in zip(i, I):
+        ing[0] += a*b[0]
+        ing[1] += a*b[1]
+        ing[2] += a*b[2]
+        ing[3] += a*b[3]
+        ing[4] += a*b[4]
+    ing = [max(ingg, 0) for ingg in ing]
+    R.append([reduce(lambda x, y: x*y, ing[:-1]), ing[-1]])
 
 print(max(R, key=lambda x: x[0])[0])
 print(max([r for r in R if r[1] == 500], key=lambda x: x[0])[0])
