@@ -1,4 +1,4 @@
-# aoc-2019
+# aoc
 
 <p align="center">
   <a href="https://adventofcode.com/">
@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Learning Python while solving <a href="https://adventofcode.com/">Advent of Code 2019</a> problems
+  Learning Python while solving <a href="https://adventofcode.com/">Advent of Code</a> problems
 </p>
 
 
