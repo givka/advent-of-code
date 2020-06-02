@@ -1,4 +1,4 @@
-# aoc
+# advent-of-code
 
 <p align="center">
   <a href="https://adventofcode.com/">
@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Learning Python while solving <a href="https://adventofcode.com/">Advent of Code</a> problems
+  Solving <a href="https://adventofcode.com/">Advent of Code</a> problems in Python3
 </p>
 
 
