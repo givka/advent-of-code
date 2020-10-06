@@ -23,17 +23,6 @@ vector<string> split(const string &str, char c) {
 }
 
 int main() {
-    ifstream input("08.in");
-    vector<vector<string>> commands;
-
-    for (string line; getline(input, line);) {
-        istringstream iss(line);
-        vector<string> command;
-        for (string word; getline(iss, word, ' ');) {
-            command.push_back(word);
-        }
-        commands.push_back(command);
-    }
 
     for (int y = 0; y < HEIGHT; ++y) {
         for (int x = 0; x < WIDTH; ++x) {
@@ -41,7 +30,11 @@ int main() {
         }
     }
 
-    for (vector<string> &command : commands) {
+    ifstream input("08.in");
+
+    for (string line; getline(input, line);) {
+        vector<string> command = split(line, ' '); 
+
         if (command[0] == "rect") {
             auto strings = split(command[1], 'x');
             int xx = stoi(strings[0]);
